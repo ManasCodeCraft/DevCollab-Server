@@ -8,6 +8,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+var baseURL = 'https://devcollab-server.onrender.com'
+var frontendURL = 'https://devcollab-t811.onrender.com'
+
+if(process.env.NODE_ENV !== 'production'){
+   baseURL = `http://localhost:${process.env.PORT}`
+   frontendURL = `http://localhost:3000`
+}
+
 module.exports = { 
 
     // Database 
@@ -15,8 +23,9 @@ module.exports = {
 
     // Server
     port: process.env.PORT,
-    baseURL: `http://localhost:${process.env.PORT}`,
-    frontendURL: 'http://localhost:3000',
+    nodeEnv: process.env.NODE_ENV,
+    baseURL: baseURL,
+    frontendURL: frontendURL,
     devcollabKey: process.env.DEVCOLLAB_SECRET_KEY,
 
     maxAllowedProjects: 20,
