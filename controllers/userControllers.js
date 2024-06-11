@@ -5,8 +5,19 @@ const { sendOTP, sendPasswordResetLink } = require("../utils/otpAndEmailUtils");
 const { registerUser, verifyOTP, changeUserProfile, getUserDetails, removeUserAccount, resetUserAccountPassword, findUsers, ifUserRegisteredWithGoogle, isUserNameUnique } = require("../services/authServices");
 const { maskEmail } = require("../utils/formatUtils");
 
-const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret } = require('../config/config')
+const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret, nodeEnv } = require('../config/config')
 const jwt_key = jwtSecret;
+
+var cookieOptions = (nodeEnv === 'production') ? {
+  httpOnly: true,
+  secure: true,
+  expires: new Date(Date.now() + 7*24*3600*1000),
+  sameSite: 'None',
+} : {
+  httpOnly: true,
+  domain: "localhost",
+  port: 3000,
+}
 
 passport.use(
   new GoogleStrategy(
@@ -63,11 +74,7 @@ module.exports.googleSignInCallback = function (req, res, next) {
       );
     }
     const token = jwt.sign({ id: user._id }, jwt_key);
-    res.cookie("Dev_Cl", token, {
-      httpOnly: true,
-      domain: "localhost",
-      port: 3000,
-    }); 
+    res.cookie("Dev_Cl", token, cookieOptions); 
     req.userid = user._id;
     res.redirect("http://localhost:3000");
   })(req, res, next);
@@ -90,11 +97,7 @@ module.exports.postSignUp = async function postSignUp(req, res) {
     const token = jwt.sign({ id: user._id }, jwt_key);
     const authCookie = require('../config/config').authCookie;
 
-    res.cookie(authCookie, token, {
-      httpOnly: true,
-      domain: "localhost",
-      port: 3000,
-    });
+    res.cookie(authCookie, token, cookieOptions);
 
     res.status(200).json({ message: "User created successfully" });
   } catch (error) {
@@ -142,7 +145,7 @@ module.exports.postLogin = async function postLogin(req, res) {
   try {
       const token = jwt.sign({ id: req.userid }, jwt_key);
       const authCookie = require('../config/config').authCookie;
-      res.cookie(authCookie, token, { httpOnly: true });
+      res.cookie(authCookie, token, cookieOptions);
       res.status(200).json({ message: "User logged in successfully" });
   } catch (er) {
     console.log(er);
