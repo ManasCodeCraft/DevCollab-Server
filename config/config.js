@@ -15,6 +15,9 @@ if(process.env.NODE_ENV !== 'production'){
    baseURL = `http://localhost:${process.env.PORT}`
    frontendURL = `http://localhost:3000`
 }
+else{
+  console.log('Environment is production...')
+}
 
 module.exports = { 
 
