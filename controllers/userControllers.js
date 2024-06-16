@@ -5,7 +5,7 @@ const { sendOTP, sendPasswordResetLink } = require("../utils/otpAndEmailUtils");
 const { registerUser, verifyOTP, changeUserProfile, getUserDetails, removeUserAccount, resetUserAccountPassword, findUsers, ifUserRegisteredWithGoogle, isUserNameUnique } = require("../services/authServices");
 const { maskEmail } = require("../utils/formatUtils");
 
-const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret, nodeEnv, frontendURL } = require('../config/config')
+const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret, nodeEnv, frontendURL, authCookie } = require('../config/config')
 const jwt_key = jwtSecret;
 
 var cookieOptions = (nodeEnv === 'production') ? {
