@@ -1,4 +1,5 @@
 const Deploy = require("../models/Deploy");
+const { copyProjectfromDatabase } = require("../services/deploymentServices");
 const { setUpClientRoute } = require("./clientRouteSetUp");
 const { runClientProject } = require("./runClientProject");
 
@@ -7,6 +8,7 @@ module.exports.loadAllClientApps = async function () {
       const projects = await Deploy.find();
       for (let project of projects) {
             console.log(`Loading Project - ${project.project}`)
+            await copyProjectfromDatabase(project.project);
             await runClientProject(project.project);
             setUpClientRoute(project.project);
       }

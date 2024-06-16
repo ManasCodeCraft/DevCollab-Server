@@ -26,6 +26,8 @@ async function copyProjectfromDatabase(projectId) {
   await modifyAppFile(path.join(dirPath, entryfile));
 }
 
+module.exports.copyProjectfromDatabase = copyProjectfromDatabase;
+
 async function copyDirectoryFromDatabase(dirPath, dirId) {
   await fs.ensureDir(dirPath);
   const directory = await Directory.findById(dirId);
