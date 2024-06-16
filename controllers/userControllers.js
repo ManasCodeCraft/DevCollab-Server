@@ -5,7 +5,7 @@ const { sendOTP, sendPasswordResetLink } = require("../utils/otpAndEmailUtils");
 const { registerUser, verifyOTP, changeUserProfile, getUserDetails, removeUserAccount, resetUserAccountPassword, findUsers, ifUserRegisteredWithGoogle, isUserNameUnique } = require("../services/authServices");
 const { maskEmail } = require("../utils/formatUtils");
 
-const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret, nodeEnv } = require('../config/config')
+const { jwtSecret, googleClientId, googleCallbackUrl, googleClientSecret, nodeEnv, frontendURL } = require('../config/config')
 const jwt_key = jwtSecret;
 
 var cookieOptions = (nodeEnv === 'production') ? {
@@ -65,18 +65,18 @@ module.exports.googleSignInCallback = function (req, res, next) {
     if (err) {
       console.log(err);
       return res.redirect(
-        "http://localhost:3000/?error=" + encodeURIComponent(err.message)
+        `${frontendURL}/?error=` + encodeURIComponent(err.message)
       );
     }
     if (!user) {
       return res.redirect(
-        "http://localhost:3000/?error=Unexpected%20Error:%20User%20login%20failed"
+        `${frontendURL}/?error=Unexpected%20Error:%20User%20login%20failed`
       );
     }
     const token = jwt.sign({ id: user._id }, jwt_key);
-    res.cookie("Dev_Cl", token, cookieOptions); 
+    res.cookie(authCookie, token, cookieOptions); 
     req.userid = user._id;
-    res.redirect("http://localhost:3000");
+    res.redirect(frontendURL);
   })(req, res, next);
 };
 
