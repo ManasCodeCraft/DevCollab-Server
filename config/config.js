@@ -46,7 +46,7 @@ module.exports = {
     // google api
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    googleCallbackUrl: `${frontendURL}/auth/google/callback`
+    googleCallbackUrl: `${baseURL}/auth/google/callback`
 
 }
 
