@@ -15,8 +15,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Name is required"],
     unique: [true, "Username already in use"],
-    min: [1, "Invalid Username"],
-    max: [30, "Username is too long"],
+    minlength: [1, "Invalid Username"],
+    maxlength: [30, "Username is too long"],
     validate: [
       {
         validator: function () {
@@ -35,10 +35,21 @@ const userSchema = new mongoose.Schema({
   Email: {
     type: String,
     required: [true, "Email is required"],
-    unique: [true, "Email already exist"],
     match: [
       /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
       "Please enter a valid email address",
+    ],
+    validate: [
+      {
+        validator: async function (value) {
+          if (this.GoogleId) {
+            return true; // Bypass uniqueness check if GoogleId is present
+          }
+          const emailCount = await mongoose.models.User.countDocuments({ Email: value });
+          return emailCount === 0;
+        },
+        message: "Email already exists",
+      },
     ],
   },
   Password: {
@@ -76,9 +87,9 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  OTP_Verified:{
-     type: Boolean,
-     default: false,
+  OTP_Verified: {
+    type: Boolean,
+    default: false,
   },
   PasswordResetToken: {
     type: String,
@@ -91,8 +102,8 @@ const userSchema = new mongoose.Schema({
 
 userSchema.pre("save", async function (next) {
   try {
-    if(this.isModified("GeneratedOTP") && this.GeneratedOTP){
-       this.OTP_Timestamp = Date.now();
+    if (this.isModified("GeneratedOTP") && this.GeneratedOTP) {
+      this.OTP_Timestamp = Date.now();
     }
     if (this.isModified("Password")) {
       if (this.Password !== this.ConfirmPassword) {

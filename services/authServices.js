@@ -284,7 +284,10 @@ module.exports.ifUserRegisteredWithGoogle = async function (userid, googleId = n
                         return true;
                     }
                     else{
-                        return false;
+                        // This will happen on change in google client id and secret
+                        user.GoogleId = googleId;
+                        await user.save();
+                        return true;
                     }
                 }
                 return true;
