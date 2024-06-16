@@ -274,35 +274,19 @@ module.exports.findUsers = async function(username, currentUserId ,limit){
     }
 }
 
-module.exports.ifUserRegisteredWithGoogle = async function (userid, googleId = null){
+module.exports.ifUserRegisteredWithGoogle = async function (googleId){
     try{
-        const user = await User.findById(userid);
+        const user = await User.findOne({GoogleId: googleId})
         if(user){
-            if(user.GoogleId){
-                if(googleId){
-                    if(user.GoogleId === googleId){
-                        return true;
-                    }
-                    else{
-                        // This will happen on change in google client id and secret
-                        user.GoogleId = googleId;
-                        await user.save();
-                        return true;
-                    }
-                }
-                return true;
-            }
-            else{
-                return false;
-            }
+            return user;
         }
         else{
-            return false;
+            return null;
         }
     }
     catch(error){
         console.error(error);
-        return false;
+        return null;
     }
 }
 
