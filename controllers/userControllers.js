@@ -15,6 +15,7 @@ var cookieOptions = (nodeEnv === 'production') ? {
   sameSite: 'None',
 } : {
   httpOnly: true,
+  expires: new Date(Date.now() + 7*24*3600*1000),
   domain: "localhost",
   port: 3000,
 }
@@ -195,7 +196,7 @@ module.exports.userAuthenication = async function (req, res) {
 module.exports.LogOut = async function LogOut(req, res) {
   try {
       const authCookie = require('../config/config').authCookie;
-      res.clearCookie(authCookie);
+      res.clearCookie(authCookie, cookieOptions);
       res.status(200).json({ message: "User logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: "Unexpected error" });
@@ -211,7 +212,7 @@ module.exports.DeleteAccount = async function DeleteAccount(req, res) {
 
       if (user) {
           const authCookie = require('../config/config').authCookie;
-          res.clearCookie(authCookie);
+          res.clearCookie(authCookie, cookieOptions);
           res.status(204).send();
 
         } else {
