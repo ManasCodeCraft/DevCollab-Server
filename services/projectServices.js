@@ -53,7 +53,7 @@ module.exports.registerProject = async function (project) {
       project: savedProject._id
     })
     const root = await rootDirectory.save();
-    const updatedProject = await Project.findByIdAndUpdate(savedProject._id, {rootDirectory: root._id})
+    const updatedProject = await Project.findByIdAndUpdate(savedProject._id, {rootDirectory: root._id}, {new: true})
 
     return updatedProject;
   }
@@ -92,7 +92,7 @@ module.exports.deleteProject = async function (projectId){
       return project;
   }
   catch(error){
-    console.error(error);
+    console.error(error, { new: true });
     return null;
   }
 }

@@ -136,7 +136,7 @@ module.exports.changeUserProfile = async function (userid, file){
           const url = await uploadImageCloudinary(file.buffer);
           const oldURL = user.ProfilePic;
           DeleteOldImageFromCloudinary(oldURL);
-          await User.findByIdAndUpdate(id, {ProfilePic: url});
+          await User.findByIdAndUpdate(userid, {ProfilePic: url});
           return url;
        }
        else{
@@ -179,7 +179,7 @@ module.exports.removeUserAccount = async function (userid){
         const user = await User.findById(userid);
         if(user){
             await User.findByIdAndDelete(userid);
-            module.exports.cleanUpUserAccount(user);
+            module.exports.cleanUpUserAccount(userid);
             return user;
         }
         else{
@@ -193,10 +193,10 @@ module.exports.removeUserAccount = async function (userid){
 }
 
 // function to perform clean up operation for user account removal
- module.exports.cleanUpUserAccount = async function (user){
+ module.exports.cleanUpUserAccount = async function (userid){
     try{
         const { projectCleanUp } = require('./projectServices');
-        var projects = user.Projects;
+        var projects = await Project.find({owner: userid});
         for(let project of projects){
              const project_document = await Project.findById(project)
              await Project.findByIdAndDelete(project);

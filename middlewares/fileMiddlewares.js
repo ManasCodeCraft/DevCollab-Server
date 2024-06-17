@@ -33,6 +33,8 @@ module.exports.createFileMiddleware = async function (req, res, next){
         req.body.directory = req.body.parentDirectoryId;
         req.body.project = req.body.projectId;
         if(!req.body.project || !req.body.directory){
+            console.log('content not found')
+            console.log(req.body)
             return res.status(400).send();
         }
         next();
