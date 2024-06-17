@@ -101,8 +101,7 @@ module.exports.userOTPResendValidate = async function (id, otp){
     try{
         const user = await User.findById(id);
         if(Date.now() - user.OTP_Timestamp > 30*1000){
-            user.GeneratedOTP = otp;
-            return await user.save();
+            return await User.findByIdAndUpdate(id, {GeneratedOTP: otp});
         }
         return null;
     }
@@ -136,9 +135,8 @@ module.exports.changeUserProfile = async function (userid, file){
        if(user){
           const url = await uploadImageCloudinary(file.buffer);
           const oldURL = user.ProfilePic;
-          user.ProfilePic = url;
           DeleteOldImageFromCloudinary(oldURL);
-          await user.save();
+          await User.findByIdAndUpdate(id, {ProfilePic: url});
           return url;
        }
        else{
@@ -212,10 +210,8 @@ module.exports.removeUserAccount = async function (userid){
 
 module.exports.setPasswordResetToken = async function(userid){
     try{
-        const user = await User.findById(userid);
         const randomHexToken = crypto.randomBytes(32).toString("hex");
-        user.PasswordResetToken = randomHexToken;
-        return await user.save();
+        return await User.findByIdAndUpdate(userid, {PasswordResetToken: randomHexToken});
     }
     catch(error){
         console.error(error);
@@ -243,11 +239,7 @@ module.exports.validateResetPassword = async function (userid, resetToken){
 
 module.exports.resetUserAccountPassword = async function(userid, password){
     try{
-        const user = await User.findById(userid);
-        user.PasswordResetExpire = undefined;
-        user.PasswordResetToken = undefined;
-        user.Password = password;
-        return await user.save();
+        return await User.findByIdAndUpdate(userid, {PasswordResetToken: undefined, PasswordResetExpire: undefined, Password: password});
     }
     catch(error){
         console.error(error);
