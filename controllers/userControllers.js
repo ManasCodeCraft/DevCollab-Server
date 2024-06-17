@@ -195,7 +195,7 @@ module.exports.userAuthenication = async function (req, res) {
 module.exports.LogOut = async function LogOut(req, res) {
   try {
       const authCookie = require('../config/config').authCookie;
-      res.clearCookie(authCookie, { domain: "localhost", port: 3000 });
+      res.clearCookie(authCookie);
       res.status(200).json({ message: "User logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: "Unexpected error" });
