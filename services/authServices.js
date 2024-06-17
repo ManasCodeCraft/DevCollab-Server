@@ -86,8 +86,7 @@ module.exports.verifyOTP = async function verifyOTP(userid, otp){
    try{
       const user = await User.findById(userid);
       if(JSON.stringify(user.GeneratedOTP) == JSON.stringify(otp)){
-        user.OTP_Verified = true;
-        await user.save();
+        await User.findByIdAndUpdate(userid, {OTP_Verified: true})
         return true;
       }
       return false;
