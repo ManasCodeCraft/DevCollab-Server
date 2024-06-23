@@ -1,4 +1,6 @@
+const { registerDirectory, ifDirectoryExist } = require('../services/directoryServices');
 const { registerNewFile, changeFileName, deleteProjectFile, updateFileContent } = require('../services/fileServices');
+const { handleFileUplaodInDirectory } = require('../utils/fileUpload');
 const { formatFile } = require('../utils/formatUtils');
 
 // Create a new file
@@ -77,4 +79,45 @@ module.exports.updateFile = async function upadateFile(req,res){
       console.log(error);
       return res.status(500).json({ message: 'Internal Server Error' });
    }
+}
+
+module.exports.uploadFilePath = async function uploadFilePath(req,res){
+    const path = req.body.relativePath;
+    const project = req.body.project;
+    const file = req.file;
+    var dirId = req.body.directory;
+
+    if(path.indexOf('node_modules') !== -1){
+      return res.status(400).json({message: 'Invalid Path'})
+    }
+
+    const pathArray = path.split('/');
+
+    for(let i = 0; i<pathArray.length-1; i++) {
+        const preExist = await ifDirectoryExist(project, dirId ,pathArray[i]);
+        if(preExist){
+          dirId = preExist._id;
+          continue;
+        }
+        const dir = await registerDirectory({
+          name: pathArray[i],
+          parentDirectory: dirId,
+          project: project
+        })
+        if(!dir){
+          return res.status(400).json({message: 'Failed to create directory'})
+        }
+        dirId = dir._id;
+    }
+
+    const fileObj = await handleFileUplaodInDirectory(file);
+    fileObj.project = project;
+    fileObj.directory = dirId;
+    const newFile = await registerNewFile(fileObj);
+
+    if(newFile){
+      return res.status(201).json(newFile);
+    }
+
+    return res.status(400).json({message: 'Failed to create file'})
 }

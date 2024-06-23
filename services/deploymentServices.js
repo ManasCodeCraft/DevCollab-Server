@@ -15,15 +15,22 @@ const ConsoleLog = require("../models/ConsoleLog");
 const { formatProjectLogs } = require("../utils/formatUtils");
 const { setUpClientRoute } = require("../client_request_handlers/clientRouteSetUp");
 const { runClientProject } = require("../client_request_handlers/runClientProject");
+const { downloadImageFromCloudinary } = require("../services/cloudinaryServices")
 
 async function copyProjectfromDatabase(projectId) {
   const project = await Project.findById(projectId);
   const dirPath = ClientProjectPath(projectId);
+  if(await fs.pathExists(dirPath)){
+    return false;
+  }
 
   await copyDirectoryFromDatabase(dirPath, project.rootDirectory);
 
   const entryfile = await getEntryFile(dirPath);
-  await modifyAppFile(path.join(dirPath, entryfile));
+  if(entryfile){
+    await modifyAppFile(path.join(dirPath, entryfile));
+  }
+  return true;
 }
 
 module.exports.copyProjectfromDatabase = copyProjectfromDatabase;
@@ -231,7 +238,6 @@ async function getFileOrFolderPath(id, isFile) {
   clientpath += pathStack.reverse().join("/");
 
   if (!fs.existsSync(clientpath)) {
-    console.log(`path not exist - ${clientpath}`);
     return null;
   }
 

@@ -6,7 +6,6 @@ app.use(express.json());
 mongoose.set('strictQuery', true)
 
 var connection_string = require('../config/config').dbURL;
-
 mongoose.connect(connection_string, {
     dbName: 'DevCollabDB'
 });

@@ -187,3 +187,11 @@ module.exports.ifMaxProjectsExceeded = async function (userId){
     return null;
   }
 }
+
+module.exports.getProjectName = async function (projectId){
+   const project = await Project.findById(projectId);
+   if(!project){
+    return null;
+   }
+   return project.name;
+}

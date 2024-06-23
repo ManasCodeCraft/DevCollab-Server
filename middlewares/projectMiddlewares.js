@@ -1,4 +1,4 @@
-const { checkForProjectOwner, ifMaxProjectsExceeded } = require("../services/projectServices");
+const { checkForProjectOwner, ifMaxProjectsExceeded, getProjectName } = require("../services/projectServices");
 
 
 module.exports.validateProjectOwner = async function (req, res, next){
@@ -57,4 +57,18 @@ module.exports.validateCreateProject = async function (req, res, next)
         console.error(error);
         return res.status(500).json({message: 'Internal Server Error'})
     }
+}
+
+module.exports.validateDownloadRequest = async function(req, res, next){
+    const projectId = req.params.projectId;
+    if(!projectId){
+        return res.status(400).json({message: 'Project not found'})
+    }
+    const name = await getProjectName(projectId);
+    if(!name){
+        return res.status(400).json({message: 'Project not found'})
+    }
+    req.projectId = projectId;
+    req.projectName = name
+    return next();
 }
