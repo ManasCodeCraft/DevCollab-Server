@@ -1,52 +1,61 @@
-const { registerDirectory, ifDirectoryExist } = require('../services/directoryServices');
-const { registerNewFile, changeFileName, deleteProjectFile, updateFileContent } = require('../services/fileServices');
-const { handleFileUplaodInDirectory } = require('../utils/fileUpload');
-const { formatFile } = require('../utils/formatUtils');
+const { logActivity } = require("../services/activityLogServices");
+const {
+  registerDirectory,
+  ifDirectoryExist,
+} = require("../services/directoryServices");
+const {
+  registerNewFile,
+  changeFileName,
+  deleteProjectFile,
+  updateFileContent,
+} = require("../services/fileServices");
+const { handleFileUplaodInDirectory } = require("../utils/fileUpload");
+const { formatFile } = require("../utils/formatUtils");
 
 // Create a new file
 module.exports.createFile = async function createFile(req, res) {
   try {
-   
     const newFile = await registerNewFile(req.body);
-    if(!newFile){
-      return res.status(400).json({message: 'Failed to create file'})
+    if (!newFile) {
+      return res.status(400).json({ message: "Failed to create file" });
     }
 
-    const createdFileDetails = formatFile(newFile)
+    const createdFileDetails = formatFile(newFile);
+    logActivity(req.userid, newFile.project, `created file ${newFile.name}`);
     res.status(201).json(createdFileDetails);
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: 'Error creating file' });
+    console.log(error);
+    res.status(500).json({ message: "Error creating file" });
   }
-}
-
+};
 
 // upload file
-module.exports.uploadProjectFile = async function uploadProjectFile(req,res){
-    try{
-        const createdFile = await registerNewFile(req.body);
-        const createdFileDetails = formatFile(createdFile);
-        res.status(201).json(createdFileDetails);
-    }
-    catch(error){
-      console.log(error)
-      res.status(500).json({ message: 'Error uploading file', error });
-    }
-}
-
+module.exports.uploadProjectFile = async function uploadProjectFile(req, res) {
+  try {
+    const createdFile = await registerNewFile(req.body);
+    const createdFileDetails = formatFile(createdFile);
+    logActivity(req.userid, createdFile.project, `uploaded file ${createdFile.name}`);
+    res.status(201).json(createdFileDetails);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error uploading file", error });
+  }
+};
 
 module.exports.editFileName = async function editFileName(req, res) {
   try {
-    const {id, newName} = req.body;
-    if(!id){
-        return res.status(400).json({ message: "Invalid File" });
+    const { id, newName } = req.body;
+    if (!id) {
+      return res.status(400).json({ message: "Invalid File" });
     }
 
     const file = await changeFileName(id, newName);
+    logActivity(req.userid, file.project, `created file ${file.name}`)
+
     res.status(200).json(newName);
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -60,64 +69,67 @@ module.exports.deleteFile = async function deleteFile(req, res) {
   try {
     const file = await deleteProjectFile(id);
     if (!file) {
-      return res.status(404).json({ message: 'File not found' });
+      return res.status(404).json({ message: "File not found" });
     }
 
-    res.status(200).json({ message: 'File deleted' });
+    logActivity(req.userid, file.project, `deleted file ${file.name}`)
+
+    res.status(200).json({ message: "File deleted" });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting file', error });
+    console.error(error);
+    res.status(500).json({ message: "Error deleting file", error });
   }
 };
 
-module.exports.updateFile = async function upadateFile(req,res){
-   try{
-       const {id, content} = req.body
-       const file = await updateFileContent(id, content)
-       return res.status(200).json(file);
-   }
-   catch(error){
-      console.log(error);
-      return res.status(500).json({ message: 'Internal Server Error' });
-   }
-}
+module.exports.updateFile = async function upadateFile(req, res) {
+  try {
+    const { id, content } = req.body;
+    const file = await updateFileContent(id, content);
+    logActivity(req.userid, file.project, `updated file ${file.name}`)
+    return res.status(200).json(file);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
-module.exports.uploadFilePath = async function uploadFilePath(req,res){
-    const path = req.body.relativePath;
-    const project = req.body.project;
-    const file = req.file;
-    var dirId = req.body.directory;
+module.exports.uploadFilePath = async function uploadFilePath(req, res) {
+  const path = req.body.relativePath;
+  const project = req.body.project;
+  const file = req.file;
+  var dirId = req.body.directory;
 
-    if(path.indexOf('node_modules') !== -1){
-      return res.status(400).json({message: 'Invalid Path'})
+  if (path.indexOf("node_modules") !== -1) {
+    return res.status(400).json({ message: "Invalid Path" });
+  }
+
+  const pathArray = path.split("/");
+
+  for (let i = 0; i < pathArray.length - 1; i++) {
+    const preExist = await ifDirectoryExist(project, dirId, pathArray[i]);
+    if (preExist) {
+      dirId = preExist._id;
+      continue;
     }
-
-    const pathArray = path.split('/');
-
-    for(let i = 0; i<pathArray.length-1; i++) {
-        const preExist = await ifDirectoryExist(project, dirId ,pathArray[i]);
-        if(preExist){
-          dirId = preExist._id;
-          continue;
-        }
-        const dir = await registerDirectory({
-          name: pathArray[i],
-          parentDirectory: dirId,
-          project: project
-        })
-        if(!dir){
-          return res.status(400).json({message: 'Failed to create directory'})
-        }
-        dirId = dir._id;
+    const dir = await registerDirectory({
+      name: pathArray[i],
+      parentDirectory: dirId,
+      project: project,
+    });
+    if (!dir) {
+      return res.status(400).json({ message: "Failed to create directory" });
     }
+    dirId = dir._id;
+  }
 
-    const fileObj = await handleFileUplaodInDirectory(file);
-    fileObj.project = project;
-    fileObj.directory = dirId;
-    const newFile = await registerNewFile(fileObj);
+  const fileObj = await handleFileUplaodInDirectory(file);
+  fileObj.project = project;
+  fileObj.directory = dirId;
+  const newFile = await registerNewFile(fileObj);
 
-    if(newFile){
-      return res.status(201).json(newFile);
-    }
+  if (newFile) {
+    return res.status(201).json(newFile);
+  }
 
-    return res.status(400).json({message: 'Failed to create file'})
-}
+  return res.status(400).json({ message: "Failed to create file" });
+};

@@ -1,3 +1,4 @@
+const { logActivity } = require('../services/activityLogServices');
 const { registerDirectory, getDirectoryContent, changeDirectoryName, deleteProjectDirectory } = require('../services/directoryServices');
 const { formatDir } = require('../utils/formatUtils');
 
@@ -5,6 +6,7 @@ const { formatDir } = require('../utils/formatUtils');
 module.exports.createDirectory = async function createDirectory(req, res) {
   try {
     const dir = await registerDirectory(req.body);
+    logActivity(req.userid, dir.project, `created directory ${dir.name}`)
     res.status(201).json(formatDir(dir));
   } catch (error) {
     res.status(500).json({ message: 'Error creating directory'});
@@ -37,6 +39,8 @@ module.exports.editDirectoryName = async function editDirectoryName(req,res){
          return res.status(400).json({message: 'Directory not found'})
        }
 
+       logActivity(req.userid, dir.project, `renamed directory to ${newName}`)
+
        res.status(200).json(newName)
     }
     catch(err){
@@ -58,8 +62,11 @@ module.exports.deleteDirectory = async function deleteDirectory(req, res) {
       return res.status(400).json({message: 'Directory not found'})
     }
 
+    logActivity(req.userid, directory.project, `deleted ${directory.name} directory`)
+
     res.status(200).json({ message: 'Directory deleted' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error deleting directory', error });
   }
 }

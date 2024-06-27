@@ -25,5 +25,4 @@ const log_schema = new mongoose.Schema({
 const ConsoleLog = mongoose.model('ConsoleLog', log_schema);
 
 
-
 module.exports = ConsoleLog;

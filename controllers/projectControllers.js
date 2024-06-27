@@ -10,9 +10,10 @@ const {
 const archiver = require("archiver");
 const { ClientProjectPath } = require("../utils/deploymentUtils");
 const fs = require("fs-extra");
-const { nodeEnv } = require('../config/config')
+const { nodeEnv } = require("../config/config");
 const { updateRelativePaths } = require("../utils/fileUpload");
 const { uploadDirectory } = require("../services/directoryServices");
+const { logActivity } = require("../services/activityLogServices");
 
 module.exports.createProject = async function createProject(req, res) {
   try {
@@ -21,6 +22,8 @@ module.exports.createProject = async function createProject(req, res) {
     if (projectName && userid) {
       const savedProject = await registerProject(req.body);
       const createdProject = await getProjectDetails(savedProject, userid);
+      logActivity(req.userid, savedProject._id, `created project - ${savedProject.name}`);
+
       res.status(201).json(createdProject);
     } else {
       res.status(400).json({ message: "Invalid Details" });
@@ -50,6 +53,9 @@ module.exports.updateProjectName = async function updateProjectName(req, res) {
     if (!updatedProject) {
       return res.status(404).json({ message: "Project not found" });
     }
+
+    logActivity(req.userid, updatedProject._id, `renamed project to ${updatedProject.name}`);
+
     res.status(200).json(projectName);
   } catch (error) {
     console.log(error);
@@ -117,5 +123,3 @@ module.exports.downloadProject = async function (req, res) {
     fs.remove(dirPath);
   }
 };
-
-

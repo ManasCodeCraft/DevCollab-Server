@@ -195,3 +195,11 @@ module.exports.getProjectName = async function (projectId){
    }
    return project.name;
 }
+
+module.exports.getAllCollaborators = async function (projectId){
+   const project = await Project.findById(projectId);
+   if(!project){
+    return null;
+   }
+   return project.collaborators;
+}

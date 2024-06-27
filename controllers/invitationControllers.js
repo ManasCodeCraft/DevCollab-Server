@@ -27,6 +27,7 @@ module.exports.acceptInvitation = async function acceptInvitation(req, res) {
 
   try {
     const invitation = await acceptProjectInvitation(invitationId);
+    logActivity(req.userid, invitation.project, `joined via invite`)
     res.status(200).json(invitation);
   } catch (error) {
     console.log(error);

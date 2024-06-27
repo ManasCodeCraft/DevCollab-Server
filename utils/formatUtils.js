@@ -78,6 +78,7 @@ module.exports.formatProject = function (project, id, data) {
     owner: isOwner,
     rootDirectory: project.rootDirectory,
     collaborators: data.collaborators,
+    activityLogs: [],
     isDeployed: project.isDeployed,
   };
 

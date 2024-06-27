@@ -1,7 +1,10 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const ActivityLog = require("../models/ActivityLog");
 app.use(express.json());
+
+ActivityLog.createIndexes();
 
 mongoose.set('strictQuery', true)
 
@@ -16,4 +19,5 @@ db.once('open', function () {
     console.log("mongoose has been connected to mongodb");
 })
 
+mongoose.connect = mongoose.createConnection;
 module.exports = mongoose

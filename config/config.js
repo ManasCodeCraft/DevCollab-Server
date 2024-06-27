@@ -23,7 +23,7 @@ module.exports = {
 
     // Server
     port: process.env.PORT,
-    nodeEnv: process.env.NODE_ENV,
+    nodeEnv: process.env.NODE_ENV || 'development',
     baseURL: baseURL,
     frontendURL: frontendURL,
     devcollabKey: process.env.DEVCOLLAB_SECRET_KEY,
