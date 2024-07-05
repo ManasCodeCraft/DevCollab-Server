@@ -1,7 +1,5 @@
 const { getPublicIdFromUrl } = require('../utils/formatUtils');
 const cloudinary = require('../config/config').cloudinary;
-const fs = require('fs');
-const axios = require('axios');
 
 module.exports.DeleteOldImageFromCloudinary = async function DeleteOldImageFromCloudinary(oldImageLink) {
   const deflink = "https://res.cloudinary.com/dgidrmdqz/image/upload/v1713376923/defaultprofile_kwree3.jpg";
@@ -37,20 +35,4 @@ module.exports.uploadImageCloudinary = async function uploadImageCloudinary(buff
   });
 };
 
-module.exports.downloadImageFromCloudinary = async function downloadImageFromCloudinary(url, localFilePath) {
-  try {
-    const response = await axios({
-      url: url,
-      responseType: 'stream',
-    });
-    const writer = fs.createWriteStream(localFilePath);
-    response.data.pipe(writer);
 
-    return new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-  } catch (error) {
-    console.error('Error downloading image from Cloudinary:', error);
-  }
-}

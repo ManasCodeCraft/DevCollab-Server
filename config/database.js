@@ -19,5 +19,4 @@ db.once('open', function () {
     console.log("mongoose has been connected to mongodb");
 })
 
-mongoose.connect = mongoose.createConnection;
 module.exports = mongoose

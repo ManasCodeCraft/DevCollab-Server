@@ -19,9 +19,10 @@ const projectSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Directory',
     },
-    isDeployed: {
-        type: Boolean,
-        default: false
+    runningStatus: {
+        type: String,
+        enum: ["running", "not running", "crashed"],
+        default: 'running',
     }
 });
 

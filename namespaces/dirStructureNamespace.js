@@ -6,10 +6,12 @@ module.exports = (io) =>{
     dirStructureNamespace.on('connection', (socket) => {
 
         socket.on('register', (userId)=>{
+            socket.userId = userId;
             socketMap.set(userId, socket.id);
         })
 
         socket.on('operation', (details)=>{
+            const directory = details.directory;
             const userId = details.userId;
             const collaborators = details.collaborators;
             const data = details.data;
@@ -20,7 +22,13 @@ module.exports = (io) =>{
                     continue;
                 }
                 const socketId = socketMap.get(collaborator);
-                dirStructureNamespace.to(socketId).emit('operation', {data, type, target});
+                dirStructureNamespace.to(socketId).emit('operation', {directory, data, type, target});
+            }
+        })
+
+        socket.on('disconnect', () => {
+            if(socket.userId){
+                socketMap.delete(socket.userId);
             }
         })
 

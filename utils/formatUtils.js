@@ -1,4 +1,4 @@
-const { baseURL } = require("../config/config");
+const { baseURL, executionServerURL, devcollabKey } = require("../config/config");
 
 // formatting Mongodb Error Object
 module.exports.formatValidationError = function formatValidationError(error) {
@@ -79,24 +79,11 @@ module.exports.formatProject = function (project, id, data) {
     rootDirectory: project.rootDirectory,
     collaborators: data.collaborators,
     activityLogs: [],
-    isDeployed: project.isDeployed,
+    runningStatus: project.runningStatus,
+    url: `${executionServerURL}/client-project/${project._id}`,
+    activeCollaborators: [],
+    consoleLogs: data.consoleLogs,
   };
-
-  if(project.isDeployed){
-    const status = data.status;
-    if(status === 'active'){
-        project_details.isRunning = true;
-    }
-    else{
-        project_details.isRunning = false;
-    }
-
-    project_details.url = `${baseURL}/client-project/${project._id}`
-
-    const stats = data.stats;
-
-    project_details = { ...project_details, ...stats}
-  }
 
   return project_details;
 };
@@ -132,21 +119,16 @@ module.exports.formatTimeStamp = function (timestamp){
 }
 
 module.exports.formatProjectLogs = function (logs) {
+  const sortedLogs = logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const formattedlogs = sortedLogs.map((log)=> module.exports.formatProjectLog(log))
+  return formattedlogs;
+};
 
-  const formattedlogs = logs.map((log)=> {
-     return {
+module.exports.formatProjectLog = function(log){
+    return {
         value: log.details,
         type: log.type,
         id: log._id,
         time: module.exports.formatTimeStamp(log.date)
-     }
-  })
-
-  const consolelogs = formattedlogs.filter((log)=>log.type==='console');
-  const errorlogs = formattedlogs.filter((log)=>log.type==='error');
-  const data = {
-    Consolelogs: consolelogs,
-    Errorlogs: errorlogs
-  };
-  return data;
-};
+    }
+}

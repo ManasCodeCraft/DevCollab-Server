@@ -1,8 +1,15 @@
+const { baseURL } = require('../config/config');
 const { registerInvitation, getInviations, acceptProjectInvitation, rejectProjectInvitation } = require('../services/inviteServices');
+const { getProjectDetails, getProjectCollaborator} = require('../services/projectServices')
+const { logActivity } = require('../services/activityLogServices');
+const io = require('socket.io-client');
+const socket = io(`${baseURL}/invite-socket`)
 
 module.exports.createInvitation = async function createInvitation(req, res) {
   try {
     const newInvitation = await registerInvitation(req.body);
+    const data = await newInvitation.populate('sender project')
+    socket.emit('send-invite', {userId: newInvitation.recipient, data})
     res.status(201).json(newInvitation);
   } catch (error) {
     console.log(error)
@@ -28,10 +35,13 @@ module.exports.acceptInvitation = async function acceptInvitation(req, res) {
   try {
     const invitation = await acceptProjectInvitation(invitationId);
     logActivity(req.userid, invitation.project, `joined via invite`)
-    res.status(200).json(invitation);
+    const details = await getProjectDetails(invitation.project, invitation.recipient);
+    const data = await getProjectCollaborator(invitation.project, invitation.recipient)
+    socket.emit('add-collab', {userId: invitation.sender, projectId: invitation.project, data})
+    res.status(200).json(details);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: 'Error accepting invitation', error });
+    res.status(500).json({ message: 'Error accepting invitation'});
   }
 };
 

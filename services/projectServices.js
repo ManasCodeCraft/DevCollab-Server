@@ -1,18 +1,25 @@
 const Project = require('../models/Project')
 const File = require('../models/File')
-const Deploy = require('../models/Deploy');
+const User = require('../models/User')
 const Invitation = require('../models/Invitation');
+const ConsoleLog = require('../models/ConsoleLog');
 const { DeleteOldImageFromCloudinary } = require('./cloudinaryServices');
 const { directoryCleanUp } = require('./directoryServices');
 const Directory = require('../models/Directory');
-const { formatProject } = require('../utils/formatUtils');
-const { deleteClientProject, getRequestData } = require('./deploymentServices');
-const ClientAppManager = require('../client_request_handlers/clientAppManager');
+const { formatProject, formatProjectLogs } = require('../utils/formatUtils');
+const { deleteInvitation } = require('./inviteServices');
+const { isMongooseObjectId } = require('../utils/typeChecking');
+const { baseURL} = require('../config/config');
+const io = require('socket.io-client');
+const { runProject, deleteProjectOnExecutionServer, runExec, stopExec, createEmptyOnExec } = require('./apiClient');
+const { projectInitialTemplate, packageJsonTemplate } = require('../utils/templates')
 
 module.exports.projectCleanUp = async function (project){
     try {
         const projectId = project._id;
+        deleteProjectOnExecutionServer(projectId)
         await Invitation.deleteMany({ project: projectId });
+        await ConsoleLog.deleteMany({ project: projectId});
 
         const files = await File.find({ project: projectId });
 
@@ -27,12 +34,6 @@ module.exports.projectCleanUp = async function (project){
 
         const directory = await Directory.findById(project.rootDirectory);
         await Directory.findByIdAndDelete(directory);
-        if(project.isDeployed){
-            const deployId = ClientAppManager.DeployId(project._id);
-            if(deployId){
-                await deleteClientProject(deployId);
-            }
-        }
         await directoryCleanUp(directory);
 
       } catch (error) {
@@ -54,6 +55,53 @@ module.exports.registerProject = async function (project) {
     })
     const root = await rootDirectory.save();
     const updatedProject = await Project.findByIdAndUpdate(savedProject._id, {rootDirectory: root._id}, {new: true})
+
+    // creating template 
+    const file = new File({
+      name: 'app.js',
+      contentType: 'String',
+      content: projectInitialTemplate(),
+      project: updatedProject._id,
+      directory: updatedProject.rootDirectory
+    })
+
+    await file.save();
+
+    const packagejson = new File({
+      name: 'package.json',
+      contentType: 'String',
+      content: packageJsonTemplate(),
+      project: updatedProject._id,
+      directory: updatedProject.rootDirectory
+    })
+
+    await packagejson.save();
+    await Directory.findByIdAndUpdate(updatedProject.rootDirectory, { $push: { files: file._id } })
+    await Directory.findByIdAndUpdate(updatedProject.rootDirectory, { $push: { files: packagejson._id } })
+    
+    await runProject(newProject._id, newProject.owner);
+    return updatedProject;
+  }
+  catch(error){
+    console.error('Error during project registration:', error);
+  }
+}
+
+module.exports.registerEmptyProject = async function (project) {
+  try{
+    // creating project object 
+    const newProject = new Project(project);
+    newProject.runningStatus = "not running";
+    const savedProject = await newProject.save();
+
+    // updating project with root Directory
+    const rootDirectory = new Directory({
+      name: 'root',
+      project: savedProject._id
+    })
+    const root = await rootDirectory.save();
+    const updatedProject = await Project.findByIdAndUpdate(savedProject._id, {rootDirectory: root._id}, {new: true})
+    await createEmptyOnExec(newProject._id);
 
     return updatedProject;
   }
@@ -92,7 +140,7 @@ module.exports.deleteProject = async function (projectId){
       return project;
   }
   catch(error){
-    console.error(error, { new: true });
+    console.error(error);
     return null;
   }
 }
@@ -115,6 +163,9 @@ module.exports.removeProjectCollaborator = async function (projectId, collaborat
    try{
       const project = await Project.findById(projectId);
       project.collaborators = project.collaborators.filter((collabId) => collabId != collaboratorId)
+      await deleteInvitation(projectId, collaboratorId)
+      const socket = io(`${baseURL}/invite-socket`);
+      socket.emit('remove-collab', {userId: collaboratorId, projectId: projectId});
       return await project.save();
    }
    catch(error){
@@ -123,16 +174,18 @@ module.exports.removeProjectCollaborator = async function (projectId, collaborat
    }
 }
 
-module.exports.ProjectNotDeployed = async function (projectId){
+module.exports.getProjectCollaborator = async function (projectId, userId){
   try{
-      const project = await Project.findById(projectId);
-      if(!project){
-        return null;
-      }
-      if(!project.isDeployed){
-        return true;
-      }
-      return false;
+    const project = await Project.findById(projectId);
+    const user = await User.findById(userId);
+    if(project.collaborators.includes(userId)){
+       return {
+          name: user.UserName,
+          id: userId,
+          profile: user.ProfilePic,
+       }
+    }
+    return null;
   }
   catch(error){
     console.error(error);
@@ -155,15 +208,13 @@ module.exports.getProjectFileNames = async function (projectId){
 
 module.exports.getProjectDetails = async function (project, userid){
  try{
+  if(isMongooseObjectId(project)){
+    project = await Project.findById(project);
+  }
   let data = {}
   const { getCollaboratorsDetails } = require('./authServices');
   data.collaborators = await getCollaboratorsDetails(project.collaborators);
-  if(project.isDeployed){
-  data.status = (await Deploy.findOne({project: project._id})).status;
-  let stats = await getRequestData(project._id);
-  data.stats = stats;
-  }
-
+  data.consoleLogs = await module.exports.getAllConsoleLogs(project._id);
   const formattedData = formatProject(project, userid, data);
   return formattedData;
  }
@@ -202,4 +253,31 @@ module.exports.getAllCollaborators = async function (projectId){
     return null;
    }
    return project.collaborators;
+}
+
+module.exports.runProject = async function (projectId){
+  const project = await Project.findById(projectId);
+  if(!project){
+    return null;
+  }
+  project.runningStatus = "running";
+  await project.save();
+  await runExec(projectId);
+  return true;
+}
+
+module.exports.stopProject = async function (projectId){
+  const project = await Project.findById(projectId);
+  if(!project){
+    return null;
+  }
+  project.runningStatus = "not running";
+  await project.save();
+  await stopExec(projectId);
+  return true;
+}
+
+module.exports.getAllConsoleLogs = async function (projectId){
+  const logs = await ConsoleLog.find({project: projectId})
+  return formatProjectLogs(logs);
 }

@@ -1,3 +1,5 @@
+const { getAllCollaborators } = require("../services/projectServices");
+
 let clients = new Map();
 
 module.exports = (io) => {
@@ -6,52 +8,39 @@ module.exports = (io) => {
   chatNamespace.on("connection", (socket) => {
     let socketId = socket.id;
 
-    socket.on("register", (data) => {
-      const projectId = data.projectId;
-      const collaborators = data.collaborators;
-      const userId = data.userId;
+    socket.on("register", async (userId) => {
+      socket.userId = userId;
+      clients.set(userId, socketId);
+    });
 
-      if (!projectId || !collaborators || collaborators.length === 0) {
-        console.dev(
-          "ProjectId, collaborators not found",
+    socket.on("send-message", async ({ projectId, userId, message }) => {
+      if (!projectId || !userId || !message) {
+        return;
+      }
+      const collaborators = (await getAllCollaborators(projectId)).map((coll) =>
+        coll.toString()
+      );
+
+      for (let collaborator of collaborators) {
+        if (collaborator == userId) {
+          continue;
+        }
+        const socketId = clients.get(collaborator);
+        if (!socketId) {
+          continue;
+        }
+        chatNamespace.to(socketId).emit("message", {
           projectId,
-          collaborators
-        );
-        return;
-      }
-
-      // register new chat room for project
-      if (!clients.has(projectId)) {
-        const map = new Map();
-        map.set(userId, socketId);
-        clients.set(projectId, map);
-      } else {
-        // adding collaborator to chat room
-        const map = clients.get(projectId);
-        map.set(userId, socketId);
-        clients.set(projectId, map);
+          message,
+        });
       }
     });
 
-    socket.on("message", (data) => {
-      const map = clients.get(data.projectId);
-      if(!map){
-        return;
+    socket.on("disconnect", () => {
+      if (socket.userId) {
+        clients.delete(socket.userId);
       }
-      const collaborators = Array.from(map.keys());
-
-      for(let collaborator of collaborators){
-        if(collaborator === data.userId){
-          continue;
-        }
-        const socketId = map.get(collaborator);
-        if(!socketId){
-          continue;
-        }
-        chatNamespace.to(socketId).emit("message", data.message);
-      }
-
     });
-
   });
 };
+

@@ -1,7 +1,7 @@
 const File = require('../models/File')
 const Directory = require('../models/Directory');
 const { DeleteOldImageFromCloudinary } = require('./cloudinaryServices');
-const { manageOnLocal } = require('./deploymentServices');
+const { onExecutionServer } = require('./apiClient');
 
 module.exports.ifFileWithSameNameExist = async function (fileName, parentDirId){
    try{
@@ -30,12 +30,13 @@ module.exports.registerNewFile = async function (file){
         const file_object = new File(file);
         const savedFile = await file_object.save();
         const dir = savedFile.directory;
-        await manageOnLocal(savedFile._id, true, 'create')
 
         //updating parent directory
         const directory = await Directory.findById(dir);
         directory.files.push(savedFile._id);
         await directory.save();
+
+        await onExecutionServer(savedFile._id, true, 'create')
 
         return savedFile;
     }
@@ -50,7 +51,7 @@ module.exports.changeFileName = async function (id, fileName){
         if(!file){
             return null;
         }
-        await manageOnLocal(id, true, 'editname', fileName)
+        await onExecutionServer(id, true, 'editname', fileName)
         file.name = fileName;
         return await file.save();
     }
@@ -66,7 +67,7 @@ module.exports.deleteProjectFile = async function (id){
         if(!file){
             return null;
         }
-        await manageOnLocal(id, true, 'delete')
+        await onExecutionServer(id, true, 'delete')
         
         if(file.contentType === 'Binary'){
             DeleteOldImageFromCloudinary(file.url);
@@ -105,7 +106,7 @@ module.exports.updateFileContent = async function (id, content){
         if(!file){
             return null;
         }
-        await manageOnLocal(id, true, 'write', content)
+        await onExecutionServer(id, true, 'write', content)
         file.content = content;
         return await file.save();
     }

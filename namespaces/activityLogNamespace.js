@@ -6,6 +6,7 @@ module.exports = (io) =>{
     activityLogNamespace.on('connection', (socket) => {
 
         socket.on('register', (userId)=>{
+            socket.userId = userId;
             socketMap.set(userId, socket.id);
         })
 
@@ -22,5 +23,10 @@ module.exports = (io) =>{
             }
         })
 
+        socket.on('disconnect', () => {
+            if(socket.userId){
+                socketMap.delete(socket.userId);
+            }
+        })
     });
 }

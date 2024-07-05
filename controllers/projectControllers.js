@@ -1,4 +1,3 @@
-const { copyProjectfromDatabase } = require("../services/deploymentServices");
 const {
   registerProject,
   getProjectDetails,
@@ -6,13 +5,10 @@ const {
   changeProjectName,
   deleteProject,
   removeProjectCollaborator,
+  runProject,
+  stopProject,
+  registerEmptyProject,
 } = require("../services/projectServices");
-const archiver = require("archiver");
-const { ClientProjectPath } = require("../utils/deploymentUtils");
-const fs = require("fs-extra");
-const { nodeEnv } = require("../config/config");
-const { updateRelativePaths } = require("../utils/fileUpload");
-const { uploadDirectory } = require("../services/directoryServices");
 const { logActivity } = require("../services/activityLogServices");
 
 module.exports.createProject = async function createProject(req, res) {
@@ -22,7 +18,34 @@ module.exports.createProject = async function createProject(req, res) {
     if (projectName && userid) {
       const savedProject = await registerProject(req.body);
       const createdProject = await getProjectDetails(savedProject, userid);
-      logActivity(req.userid, savedProject._id, `created project - ${savedProject.name}`);
+      logActivity(
+        req.userid,
+        savedProject._id,
+        `created project - ${savedProject.name}`
+      );
+
+      res.status(201).json(createdProject);
+    } else {
+      res.status(400).json({ message: "Invalid Details" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports.createEmptyProject = async function (req, res) {
+  try {
+    const userid = req.userid;
+    const projectName = req.body.projectName;
+    if (projectName && userid) {
+      const savedProject = await registerEmptyProject(req.body);
+      const createdProject = await getProjectDetails(savedProject, userid);
+      logActivity(
+        req.userid,
+        savedProject._id,
+        `created project - ${savedProject.name}`
+      );
 
       res.status(201).json(createdProject);
     } else {
@@ -54,7 +77,11 @@ module.exports.updateProjectName = async function updateProjectName(req, res) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    logActivity(req.userid, updatedProject._id, `renamed project to ${updatedProject.name}`);
+    logActivity(
+      req.userid,
+      updatedProject._id,
+      `renamed project to ${updatedProject.name}`
+    );
 
     res.status(200).json(projectName);
   } catch (error) {
@@ -91,35 +118,36 @@ module.exports.removeCollaborator = async function removeCollaborator(
       return res.status(404).json({ message: "Project not found" });
     }
 
-    res.status(200).json(project);
+    return res.status(200).json(project);
   } catch (error) {
     res.status(500).json({ message: "Error removing collaborators", error });
   }
 };
 
-module.exports.downloadProject = async function (req, res) {
-  const projectId = req.projectId;
-  const projectName = req.projectName;
-  const result = await copyProjectfromDatabase(projectId);
-  const dirPath = ClientProjectPath(projectId);
+module.exports.runNodejsProject = async function (req, res) {
+  try {
+    const { projectId } = req.body;
+    const project = await runProject(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.status(200).json(project);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send();
+  }
+};
 
-  const archive = archiver("zip", {
-    zlib: { level: 9 },
-  });
-
-  archive.on("error", function (err) {
-    throw err;
-  });
-
-  res.attachment(`${projectName}.zip`);
-
-  archive.pipe(res);
-
-  archive.directory(dirPath, false);
-
-  await archive.finalize();
-
-  if (result) {
-    fs.remove(dirPath);
+module.exports.stopNodejsProject = async function (req, res) {
+  try {
+    const { projectId } = req.body;
+    const project = await stopProject(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.status(200).json(project);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send();
   }
 };

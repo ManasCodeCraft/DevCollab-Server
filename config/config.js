@@ -10,10 +10,12 @@ cloudinary.config({
 
 var baseURL = 'https://devcollab-server.onrender.com'
 var frontendURL = 'https://devcollab-t811.onrender.com'
+var executionServerURL = 'https://devcollab-execution-server.onrender.com'
 
 if(process.env.NODE_ENV !== 'production'){
    baseURL = `http://localhost:${process.env.PORT}`
    frontendURL = `http://localhost:3000`
+   executionServerURL = `http://localhost:7500`
 }
 
 module.exports = { 
@@ -26,13 +28,16 @@ module.exports = {
     nodeEnv: process.env.NODE_ENV || 'development',
     baseURL: baseURL,
     frontendURL: frontendURL,
-    devcollabKey: process.env.DEVCOLLAB_SECRET_KEY,
+    executionServerURL:executionServerURL,
 
     maxAllowedProjects: 20,
 
-    // auth
+    // auth and keys
     jwtSecret: process.env.JWT_SECRET_KEY,
     authCookie: 'Dev_Cl',
+    devcollabKey: process.env.DEVCOLLAB_SECRET_KEY,
+    devcollabInterServerRequestKey: process.env.DEVCOLLAB_INTER_SERVER_REQUEST_KEY,
+    devcollabConfigKey: process.env.DEVCOLLAB_CONFIG_KEY,
 
     // nodemailer email
     mailId: process.env.MAIL_ID,
@@ -42,6 +47,11 @@ module.exports = {
 
     // cloudinary 
     cloudinary: cloudinary,
+    cloudinaryConfig: {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    },
 
     // google api
     googleClientId: process.env.GOOGLE_CLIENT_ID,

@@ -1,14 +1,12 @@
 const Directory = require("../models/Directory");
 const File = require("../models/File");
-const { handleFileUplaodInDirectory } = require("../utils/fileUpload");
 const {
   formatDirectoryContent,
   formatFile,
   formatDir,
 } = require("../utils/formatUtils");
 const { DeleteOldImageFromCloudinary } = require("./cloudinaryServices");
-const { manageOnLocal } = require("./deploymentServices");
-const { registerNewFile } = require("./fileServices");
+const { onExecutionServer } = require("./apiClient");
 
 module.exports.directoryCleanUp = async function (directory) {
   try {
@@ -40,7 +38,7 @@ module.exports.registerDirectory = async function (directory) {
       await parent.save();
     }
 
-    await manageOnLocal(savedDir._id, false, "create");
+    await onExecutionServer(savedDir._id, false, "create");
     return savedDir;
   } catch (error) {
     console.error(error);
@@ -102,7 +100,7 @@ module.exports.getDirectoryContent = async function (id) {
 module.exports.changeDirectoryName = async function (id, newName) {
   try {
     const dir = await Directory.findById(id);
-    await manageOnLocal(id, false, "editname", newName);
+    await onExecutionServer(id, false, "editname", newName);
     dir.name = newName;
     return await dir.save();
   } catch (error) {
@@ -113,7 +111,7 @@ module.exports.changeDirectoryName = async function (id, newName) {
 
 module.exports.deleteProjectDirectory = async function (id) {
   try {
-    await manageOnLocal(id, false, "delete");
+    await onExecutionServer(id, false, "delete");
     const directory = await Directory.findById(id);
     if (!directory) {
       return null;

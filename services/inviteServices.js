@@ -79,7 +79,7 @@ module.exports.acceptProjectInvitation = async function (invitationId){
         const project = await Project.findById(invitation.project);
         project.collaborators.push(invitation.recipient);
         await project.save();
-        return invitation.save();
+        return await invitation.save();
     }
     catch(error){
         console.error(error);
@@ -87,6 +87,16 @@ module.exports.acceptProjectInvitation = async function (invitationId){
     }
 }
 
+module.exports.deleteInvitation = async function deleteInvitation(projectId, recipientId){
+    try{
+        const invitation = await Invitation.findOneAndDelete({ project: projectId, recipient: recipientId});
+        return invitation;
+    }
+    catch(error){
+        console.error(error);
+        return null;
+    }
+}
 
 module.exports.rejectProjectInvitation = async function (invitationId){
     try{

@@ -86,7 +86,7 @@ module.exports.updateFile = async function upadateFile(req, res) {
     const { id, content } = req.body;
     const file = await updateFileContent(id, content);
     logActivity(req.userid, file.project, `updated file ${file.name}`)
-    return res.status(200).json(file);
+    return res.status(200).json(file.content);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal Server Error" });

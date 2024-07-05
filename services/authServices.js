@@ -297,10 +297,14 @@ module.exports.isUserNameUnique = async function (username){
 
 
 module.exports.getCollaboratorsDetails = async function getCollaboratorsDetails(collaborators) {
-    var members = [];
-    for (let user of collaborators) {
-        let user_ = await User.findById(user);
-        members.push(formatCollaborator(user_));
-    }
-    return members;
+    const details = await Promise.all(collaborators.map(async collaborator => await module.exports.getCollaboratorDetails(collaborator)));
+    return details;
+}
+
+module.exports.getCollaboratorDetails = async function (collaboratorId){
+   const user = await User.findById(collaboratorId);
+   if(!user){
+    return null;
+   }
+   return formatCollaborator(user);
 }
