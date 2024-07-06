@@ -1,10 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const ActivityLog = require("../models/ActivityLog");
 app.use(express.json());
-
-ActivityLog.createIndexes();
 
 mongoose.set('strictQuery', true)
 
