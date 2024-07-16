@@ -1,4 +1,4 @@
-const { mongodbModelsOperation, emitConsoleLog, updateRunningStatus, updatePackageJson } = require('../services/executionServerRequest');
+const { mongodbModelsOperation, emitConsoleLog, updateRunningStatus, updatePackageJson, getFileOrFolderPath } = require('../services/executionServerRequest');
 
 const secretKey = require('../config/config').devcollabInterServerRequestKey
 
@@ -14,7 +14,9 @@ module.exports.sendOnExecutionServer = async function (eventName ,data){
         data.key = secretKey;
         return await new Promise((resolve, reject) => {
             serverSocket.emit(eventName, data);
-            serverSocket.on(`${eventName}-response`, resolve);
+            serverSocket.on(`${eventName}-response`, (data)=>{
+                resolve(data);
+            });
         })
     }
     console.error('Execution Server is not connected');
@@ -62,6 +64,13 @@ module.exports.nameSpace = (io) => {
                 const result = { ...config };
                 result.cloudinary = null;
                 serverSocket.emit('get-server-config-response', {key, data: result})
+            }
+        })
+
+        socket.on('get-file-folder-path', async ({key, id, isFile})=>{
+            if(key === secretKey){
+            const result = await getFileOrFolderPath(id, isFile)
+            serverSocket.emit('get-file-folder-path-response', {key, data: result})
             }
         })
 

@@ -31,6 +31,26 @@ module.exports = (io) => {
       }
     });
 
+    socket.on("program-update-status", async ({ projectId, userId, status }) => {
+      try {
+        if (!projectId || !status) {
+          return;
+        }
+        const allCollaborators = await getAllCollaborators(projectId);
+        for (let collaborator of allCollaborators) {
+          if (collaborator === userId) continue;
+          const socketId = users.get(collaborator.toString());
+          if (socketId) {
+            runningStatusNamespace
+              .to(socketId)
+              .emit("program-status-update", { projectId, status });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching collaborators: ", error);
+      }
+    });
+
     socket.on("disconnect", () => {
       const userId = socket.userId;
       if (userId) {

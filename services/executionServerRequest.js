@@ -49,3 +49,8 @@ module.exports.updatePackageJson = async function (projectId, content){
     dirStructureSocket.emit('send-operation', details);
     return true;
 }
+
+module.exports.getFileOrFolderPath = async function (id, isFile){
+    if(isFile) return (await File.findById(id)).path;
+    return (await Directory.findById(id)).path;
+}

@@ -64,7 +64,7 @@ module.exports.fileUploadMiddleWare = async function(req, res, next){
         }
 
         else{
-            req.body.content = '';
+            req.body.content = buffer.toString() || '';
             req.body.contentType = 'String';
             req.body.directory = parentDirectoryId;
             req.body.project = projectId;

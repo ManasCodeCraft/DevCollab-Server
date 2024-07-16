@@ -34,6 +34,30 @@ module.exports = (io) => {
       }
     });
 
+    socket.on("send-program-log", async ({ projectId, fileName, log }) => {
+
+      const allCollabs = await getAllCollaborators(projectId);
+      if (!allCollabs) {
+        console.error(
+          "Unable to retrieve all collaborators for project",
+          projectId,
+          allCollabs
+        );
+        return;
+      }
+
+      for (let collaborator of allCollabs) {
+        const socketId = clients.get(collaborator.toString());
+        if (!socketId) {
+          continue;
+        }
+
+        consoleLogNamespace
+          .to(socketId)
+          .emit("program-log", { projectId, fileName, log });
+      }
+    });
+
     socket.on("disconnect", () => {
       if (socket.userId) {
         clients.delete(socket.userId);
