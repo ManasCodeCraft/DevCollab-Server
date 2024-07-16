@@ -1,11 +1,4 @@
-const axios = require('axios');
-const config = require('../config/config');
-
-const axiosRequest = async function (url, options){
-    url = config.executionServerURL + url;
-    options.interServerRequestKey = config.devcollabInterServerRequestKey;
-    return await axios.post(url, options);
-}
+const { sendOnExecutionServer} = require('../namespaces/executionServerNamespace');
 
 module.exports.onExecutionServer = async function (id, isFile, task, nameOrContent){
     let options = {
@@ -14,7 +7,7 @@ module.exports.onExecutionServer = async function (id, isFile, task, nameOrConte
         task,
         nameOrContent
     };
-    return await axiosRequest('/on-local/crud', options);
+    return await sendOnExecutionServer('on-local-crud', options);
 }
 
 module.exports.runProject = async function (projectId, userId){
@@ -22,33 +15,33 @@ module.exports.runProject = async function (projectId, userId){
         projectId,
         userId
     };
-    return await axiosRequest('/run-nodejs/init', options);
+    return await sendOnExecutionServer('run-nodejs-init', options);
 }
 
 module.exports.createEmptyOnExec = async function(projectId){
     let options = {
         projectId
     };
-    return await axiosRequest('/on-local/create-empty', options);
+    return await sendOnExecutionServer('on-local-create-empty', options);
 }
 
 module.exports.deleteProjectOnExecutionServer = async function (projectId){
     let options = {
         projectId
     };
-    return await axiosRequest('/on-local/delete', options);
+    return await sendOnExecutionServer('on-local-delete', options);
 }
 
 module.exports.runExec = async function (projectId){
     let options = {
         projectId
     };
-    return await axiosRequest('/run-nodejs/start', options);
+    return await sendOnExecutionServer('run-nodejs-start', options);
 }
 
 module.exports.stopExec = async function (projectId){
     let options = {
         projectId
     };
-    return await axiosRequest('/run-nodejs/stop', options);
+    return await sendOnExecutionServer('run-nodejs-stop', options);
 }

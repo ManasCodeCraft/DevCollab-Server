@@ -36,7 +36,7 @@ module.exports.registerNewFile = async function (file){
         directory.files.push(savedFile._id);
         await directory.save();
 
-        await onExecutionServer(savedFile._id, true, 'create')
+        await onExecutionServer(savedFile._id, true, 'create', file.content)
 
         return savedFile;
     }

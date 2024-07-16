@@ -7,7 +7,7 @@ mongoose.set('strictQuery', true)
 
 var connection_string = require('../config/config').dbURL;
 mongoose.connect(connection_string, {
-    dbName: 'DevCollabDB'
+    dbName: 'DevCollabDB',
 });
 
 var db = mongoose.connection;   

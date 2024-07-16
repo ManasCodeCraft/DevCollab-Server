@@ -3,13 +3,10 @@
     "archiver": "^7.0.1",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
-    "bson": "^6.7.0",
-    "circular-json": "^0.5.9",
     "cloudinary": "^2.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "dockerode": "^4.0.2",
     "dotenv": "^16.4.5",
     "escodegen": "^2.1.0",
     "esprima": "^4.0.1",
@@ -28,12 +25,8 @@
     "otp-generator": "^4.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "pidusage": "^3.0.2",
-    "pm2": "^5.4.0",
-    "portscanner": "^2.2.0",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
-    "tar-stream": "^3.1.7",
     "vm2": "^3.9.19"
   }
 }

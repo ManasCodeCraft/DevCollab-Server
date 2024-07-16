@@ -6,6 +6,7 @@ const consoleLogNamespace = require("./namespaces/consoleLogNamespace");
 const activeCollabNamespace = require("./namespaces/activeCollabNamespace");
 const runningStatusNamespace = require("./namespaces/runningStatusNamespace");
 const waitingModalNamespace = require("./namespaces/waitingModalNamespace"); 
+const executionServerNamespace = require("./namespaces/executionServerNamespace").nameSpace;
 
 const { frontendURL, executionServerURL } = require("./config/config");
 
@@ -33,6 +34,7 @@ module.exports = (server) => {
   activeCollabNamespace(io);
   runningStatusNamespace(io);
   waitingModalNamespace(io);
+  executionServerNamespace(io);
 
   return io;
 };

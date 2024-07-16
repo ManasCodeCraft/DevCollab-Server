@@ -10,7 +10,7 @@ module.exports = (io) =>{
             socketMap.set(userId, socket.id);
         })
 
-        socket.on('operation', (details)=>{
+        socket.on('send-operation', (details)=>{
             const directory = details.directory;
             const userId = details.userId;
             const collaborators = details.collaborators;
