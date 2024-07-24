@@ -14,6 +14,7 @@ module.exports = (io) => {
     });
 
     socket.on("send-message", async ({ projectId, userId, message }) => {
+      console.log(projectId, userId, message);
       if (!projectId || !userId || !message) {
         return;
       }
@@ -29,6 +30,7 @@ module.exports = (io) => {
         if (!socketId) {
           continue;
         }
+        console.log('sending... ', socketId, projectId, message)
         chatNamespace.to(socketId).emit("message", {
           projectId,
           message,
