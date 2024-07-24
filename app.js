@@ -29,12 +29,26 @@ app.use(
     extended: true,
   })
 );
+
+const allowedOrigins = [
+  config.frontendURL,
+  config.baseURL,
+  config.executionServerURL
+];
+
 app.use(
   cors({
-    origin: config.frontendURL,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Not allowed by CORS, - ${origin}`));
+      }
+    },
     credentials: true,
   })
 );
+
 
 app.use(cookieParser());
 
