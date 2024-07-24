@@ -14,20 +14,19 @@ module.exports = (io) => {
     });
 
     socket.on("send-message", async ({ projectId, userId, message }) => {
-      console.log(projectId, userId, message);
       if (!projectId || !userId || !message) {
         return;
       }
       const collaborators = await getAllCollaborators(projectId)
-      console.log(collaborators.length, collaborators)
 
       for (let collaborator of collaborators) {
-        console.log('collab - ', collaborator)
         if (collaborator == userId) {
+          console.log('rejected', {userId})
           continue;
         }
         const socketId = clients.get(collaborator.toString());
         if (!socketId) {
+          console.log('rejected socket', collaborator)
           continue;
         }
         console.log('sending... ', socketId, projectId, message)
