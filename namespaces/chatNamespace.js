@@ -18,15 +18,15 @@ module.exports = (io) => {
       if (!projectId || !userId || !message) {
         return;
       }
-      const collaborators = (await getAllCollaborators(projectId)).map((coll) =>
-        coll.toString()
-      );
+      const collaborators = await getAllCollaborators(projectId)
+      console.log(collaborators.length, collaborators)
 
       for (let collaborator of collaborators) {
+        console.log('collab - ', collaborator)
         if (collaborator == userId) {
           continue;
         }
-        const socketId = clients.get(collaborator);
+        const socketId = clients.get(collaborator.toString());
         if (!socketId) {
           continue;
         }
