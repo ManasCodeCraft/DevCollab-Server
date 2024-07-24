@@ -8,10 +8,10 @@ const runningStatusNamespace = require("./namespaces/runningStatusNamespace");
 const waitingModalNamespace = require("./namespaces/waitingModalNamespace"); 
 const executionServerNamespace = require("./namespaces/executionServerNamespace").nameSpace;
 
-const { frontendURL, executionServerURL } = require("./config/config");
+const { frontendURL, executionServerURL, baseURL } = require("./config/config");
 
 module.exports = (server) => {
-  const allowedURLs = [frontendURL, executionServerURL]
+  const allowedURLs = [frontendURL, executionServerURL, baseURL]
   const io = require("socket.io")(server, {
     cors: {
       origin: (origin, callback) => {
