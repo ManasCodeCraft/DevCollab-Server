@@ -5,24 +5,6 @@ const secretKey = require('../config/config').devcollabInterServerRequestKey
 var isConnected = false;
 var serverSocket = null;
 
-module.exports.sendOnExecutionServer = async function (eventName ,data){
-    if(isConnected && serverSocket){
-        if(typeof data !== 'object'){
-            console.error('incorrect data - format, on sending request to execution server')
-            return null;
-        }
-        data.key = secretKey;
-        return await new Promise((resolve, reject) => {
-            serverSocket.emit(eventName, data);
-            serverSocket.on(`${eventName}-response`, (data)=>{
-                resolve(data);
-            });
-        })
-    }
-    console.error('Execution Server is not connected');
-    return null;
-}
-
 module.exports.nameSpace = (io) => {
     const executionServerNamespace = io.of('/execution-server-socket');
 
@@ -73,6 +55,24 @@ module.exports.nameSpace = (io) => {
             serverSocket.emit('get-file-folder-path-response', {key, data: result})
             }
         })
+
+        module.exports.sendOnExecutionServer = async function (eventName ,data){
+            // if(isConnected && serverSocket){
+                if(typeof data !== 'object'){
+                    console.error('incorrect data - format, on sending request to execution server')
+                    return null;
+                }
+                data.key = secretKey;
+                return await new Promise((resolve, reject) => {
+                    socket.emit(eventName, data);
+                    socket.on(`${eventName}-response`, (data)=>{
+                        resolve(data);
+                    });
+                })
+            // }
+            // console.error('Execution Server is not connected');
+            // return null;
+        }
 
         socket.on('disconnect', () => {
             isConnected = false;
