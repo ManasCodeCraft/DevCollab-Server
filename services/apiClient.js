@@ -15,7 +15,6 @@ module.exports.runProject = async function (projectId, userId){
         projectId,
         userId
     };
-    console.log('sending request for run project')
     return await sendOnExecutionServer('run-nodejs-init', options);
 }
 

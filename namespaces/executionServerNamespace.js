@@ -46,7 +46,7 @@ const { waitInMs } = require("../utils/wait");
     const executionServerNamespace = io.of("/execution-server-socket");
   
     executionServerNamespace.on("connection", (socket) => {
-      console.log("Client connected with socket ID:", socket.id);
+      console.log("Execution Server connected with socket ID:", socket.id);
       serverSocket = socket;
   
       const setupListeners = () => {
@@ -94,11 +94,11 @@ const { waitInMs } = require("../utils/wait");
         });
   
         socket.on("disconnect", () => {
-          console.log("Client disconnected with socket ID:", socket.id);
+          console.log("Execution Server disconnected with socket ID:", socket.id);
           serverSocket = null;
   
           if (!sendingReconnectionRequest) {
-            sendReconnectionRequest();
+             sendReconnectionRequest();
           }
         });
       };
@@ -116,6 +116,7 @@ const { waitInMs } = require("../utils/wait");
          await waitInMs(1000*60*10);
       }
       reconnectTry++;
+      console.log("Attempting to reconnect with execution server, reconnect try - ", reconnectTry)
       sendingReconnectionRequest = true;
       const response = await axios.get(`${config.executionServerURL}/from-main-server/reconnect`, {
         headers: {
