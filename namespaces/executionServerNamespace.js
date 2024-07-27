@@ -113,11 +113,7 @@ const {
       });
       sendingReconnectionRequest = false;
   
-      if (response.data) {
-        console.log("Reconnection request succeeded");
-      } else {
-        console.error("Reconnection request failed");
-      }
+      console.log("Reconnection request succeeded");
     } catch (err) {
       console.error("Reconnection request error:", err);
       sendingReconnectionRequest = false;
