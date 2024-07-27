@@ -9,19 +9,19 @@ const {
   const config = require("../config/config");
   const secretKey = config.devcollabInterServerRequestKey;
   const axios = require("axios");
+const { waitInMs } = require("../utils/wait");
   
-  var isConnected = false;
-  var serverSocket = null;
-  var sendingReconnectionRequest = false;
+  let serverSocket = null;
+  let sendingReconnectionRequest = false;
   
   module.exports.sendOnExecutionServer = async function (eventName, data) {
-    if (isConnected && serverSocket) {
+    if (serverSocket) {
       if (typeof data !== "object") {
-        console.error("incorrect data format on sending request to execution server");
+        console.error("Incorrect data format on sending request to execution server");
         return null;
       }
       data.key = secretKey;
-      return await new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         serverSocket.emit(eventName, data);
         serverSocket.once(`${eventName}-response`, (response) => {
           resolve(response);
@@ -34,7 +34,7 @@ const {
         await sendReconnectionRequest();
       }
   
-      if (isConnected && serverSocket) {
+      if (serverSocket) {
         return module.exports.sendOnExecutionServer(eventName, data);
       } else {
         return null;
@@ -46,65 +46,76 @@ const {
     const executionServerNamespace = io.of("/execution-server-socket");
   
     executionServerNamespace.on("connection", (socket) => {
-      isConnected = true;
+      console.log("Client connected with socket ID:", socket.id);
       serverSocket = socket;
   
-      socket.on("mongodb-models", async ({ key, executionString }) => {
-        if (key === secretKey) {
-          const data = await mongodbModelsOperation(executionString);
-          serverSocket.emit("mongodb-models-response", { key, data });
-        }
-      });
+      const setupListeners = () => {
+        socket.on("mongodb-models", async ({ key, executionString }) => {
+          if (key === secretKey) {
+            const data = await mongodbModelsOperation(executionString);
+            socket.emit("mongodb-models-response", { key, data });
+          }
+        });
   
-      socket.on("console-log", async ({ key, log }) => {
-        if (key === secretKey) {
-          const result = await emitConsoleLog(log);
-          serverSocket.emit("console-log-response", { key, data: result });
-        }
-      });
+        socket.on("console-log", async ({ key, log }) => {
+          if (key === secretKey) {
+            const result = await emitConsoleLog(log);
+            socket.emit("console-log-response", { key, data: result });
+          }
+        });
   
-      socket.on("update-status", async ({ key, projectId, status }) => {
-        if (key === secretKey) {
-          const result = await updateRunningStatus(projectId, status);
-          serverSocket.emit("update-status-response", { key, data: result });
-        }
-      });
+        socket.on("update-status", async ({ key, projectId, status }) => {
+          if (key === secretKey) {
+            const result = await updateRunningStatus(projectId, status);
+            socket.emit("update-status-response", { key, data: result });
+          }
+        });
   
-      socket.on("update-package-json", async ({ key, projectId, content }) => {
-        if (key === secretKey) {
-          const result = await updatePackageJson(projectId, content);
-          serverSocket.emit("update-package-json-response", { key, data: result });
-        }
-      });
+        socket.on("update-package-json", async ({ key, projectId, content }) => {
+          if (key === secretKey) {
+            const result = await updatePackageJson(projectId, content);
+            socket.emit("update-package-json-response", { key, data: result });
+          }
+        });
   
-      socket.on("get-server-config", async ({ key }) => {
-        if (key === secretKey) {
-          const result = { ...config };
-          result.cloudinary = null;
-          serverSocket.emit("get-server-config-response", { key, data: result });
-        }
-      });
+        socket.on("get-server-config", async ({ key }) => {
+          if (key === secretKey) {
+            const result = { ...config };
+            result.cloudinary = null;
+            socket.emit("get-server-config-response", { key, data: result });
+          }
+        });
   
-      socket.on("get-file-folder-path", async ({ key, id, isFile }) => {
-        if (key === secretKey) {
-          const result = await getFileOrFolderPath(id, isFile);
-          serverSocket.emit("get-file-folder-path-response", { key, data: result });
-        }
-      });
+        socket.on("get-file-folder-path", async ({ key, id, isFile }) => {
+          if (key === secretKey) {
+            const result = await getFileOrFolderPath(id, isFile);
+            socket.emit("get-file-folder-path-response", { key, data: result });
+          }
+        });
   
-      socket.on("disconnect", () => {
-        isConnected = false;
-        serverSocket = null;
+        socket.on("disconnect", () => {
+          console.log("Client disconnected with socket ID:", socket.id);
+          serverSocket = null;
   
-        if (!sendingReconnectionRequest) {
-          sendReconnectionRequest();
-        }
-      });
+          if (!sendingReconnectionRequest) {
+            sendReconnectionRequest();
+          }
+        });
+      };
+  
+      setupListeners();
     });
   };
   
+
+  var reconnectTry = 0;
   async function sendReconnectionRequest() {
     try {
+      if(reconnectTry > 10){
+         reconnectTry = 0;
+         await waitInMs(1000*60*10);
+      }
+      reconnectTry++;
       sendingReconnectionRequest = true;
       const response = await axios.get(`${config.executionServerURL}/from-main-server/reconnect`, {
         headers: {
@@ -116,7 +127,8 @@ const {
       console.log("Reconnection request succeeded");
     } catch (err) {
       console.error("Reconnection request error:", err);
-      sendingReconnectionRequest = false;
+      await waitInMs(1000*5);
+      await sendReconnectionRequest();
     }
   }
   
